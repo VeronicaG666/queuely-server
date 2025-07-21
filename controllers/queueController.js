@@ -1,6 +1,5 @@
 const pool = require('../db');
 const { Parser } = require('json2csv');
-const { v4: isUUID } = require('uuid');
 
 // ✅ Create Queue
 const createQueue = async (req, res) => {
@@ -11,10 +10,7 @@ const createQueue = async (req, res) => {
   }
 
   try {
-    const business = await pool.query(
-      'SELECT id FROM businesses WHERE id = $1',
-      [business_id]
-    );
+    const business = await pool.query('SELECT id FROM businesses WHERE id = $1', [business_id]);
 
     if (business.rows.length === 0) {
       return res.status(404).json({ error: 'Business not found' });
@@ -27,7 +23,12 @@ const createQueue = async (req, res) => {
 
     res.status(201).json({
       message: '✅ Queue created',
-      queue: result.rows[0],
+      queue: {
+        id: result.rows[0].id,
+        title: result.rows[0].title,
+        status: result.rows[0].status,
+        created_at: result.rows[0].created_at,
+      },
     });
   } catch (err) {
     console.error('❌ createQueue error:', err);
@@ -40,21 +41,19 @@ const joinQueue = async (req, res) => {
   const queue_id = req.params.id;
   const { name, notify_email } = req.body;
 
-  console.log('🛬 joinQueue:', { queue_id, name });
+  console.log('➡️ joinQueue API hit');
+  console.log('queue_id:', queue_id, '| name:', name);
 
   if (!queue_id || !name) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
-    const queue = await pool.query(
-      'SELECT * FROM queues WHERE id = $1',
-      [queue_id]
-    );
+    const queue = await pool.query('SELECT * FROM queues WHERE id = $1', [queue_id]);
+    console.log('queue check:', queue.rows);
 
     if (queue.rows.length === 0) {
-      console.warn('⚠️ Queue not found or inactive:', queue_id);
-      return res.status(404).json({ error: 'Queue not found or inactive' });
+      return res.status(404).json({ error: 'Queue not found' });
     }
 
     const existingUser = await pool.query(
@@ -102,8 +101,14 @@ const joinQueue = async (req, res) => {
 };
 
 // ✅ Get All Users in Queue
+const isValidUUID = (uuid) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(uuid);
+
 const getQueueUsers = async (req, res) => {
   const queue_id = req.params.id;
+
+  if (!isValidUUID(queue_id)) {
+    return res.status(400).json({ error: 'Invalid queue ID' });
+  }
 
   try {
     const queue = await pool.query('SELECT * FROM queues WHERE id = $1', [queue_id]);
@@ -131,7 +136,8 @@ const getQueueUsers = async (req, res) => {
   }
 };
 
-// ✅ Update User Status
+
+// ✅ Update User Status in Queue
 const updateQueueUserStatus = async (req, res) => {
   const { queueId, userId } = req.params;
   const { status } = req.body;
@@ -158,7 +164,7 @@ const updateQueueUserStatus = async (req, res) => {
   }
 };
 
-// ✅ Export CSV
+// ✅ Export Queue to CSV
 const exportQueueCSV = async (req, res) => {
   const queue_id = req.params.id;
 
