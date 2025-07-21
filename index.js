@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
 const socketIO = require('socket.io');
+
 const businessRoutes = require('./routes/businessRoutes');
 const queueRoutes = require('./routes/queueRoutes');
 
@@ -14,10 +16,25 @@ const server = http.createServer(app);
 // ✅ Allow only your frontend domain in production
 const allowedOrigins = [
   'http://localhost:5173', // Dev
-  'https://queuely.vercel.app', // 🔒 Your deployed frontend (change if needed)
+  'https://queuely.vercel.app', // 🔒 Your deployed frontend
 ];
 
-// ✅ Setup CORS securely
+// ✅ Secure headers (including CSP for fonts)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "font-src": ["'self'", "data:"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "script-src": ["'self'"],
+      },
+    },
+  })
+);
+
+// ✅ CORS setup
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -30,14 +47,14 @@ app.use(cors({
   credentials: true,
 }));
 
-// ✅ JSON middleware
+// ✅ Body parsing
 app.use(express.json());
 
-// ✅ Routes
+// ✅ API routes
 app.use('/api/business', businessRoutes);
 app.use('/api/queue', queueRoutes);
 
-// ✅ Attach socket.io and pass to controllers
+// ✅ Socket.io setup
 const io = socketIO(server, {
   cors: {
     origin: allowedOrigins,
@@ -45,9 +62,10 @@ const io = socketIO(server, {
   },
 });
 
+// Attach io for global usage
 app.set('io', io);
 
-// ✅ Socket logic
+// ✅ Socket connection logic
 io.on('connection', (socket) => {
   console.log(`🟢 Socket connected: ${socket.id}`);
 
@@ -61,7 +79,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// ✅ Start server
+// ✅ Start the server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Queuely backend running at http://localhost:${PORT}`);
