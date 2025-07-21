@@ -19,10 +19,7 @@ const allowedOrigins = [
   'https://queuely.vercel.app', // 🔒 Your deployed frontend
 ];
 
-// Prevent render from trying to serve unknown static files like fonts
-app.get('*', (req, res) => {
-  res.status(404).json({ message: 'Not found' });
-});
+
 
 // ✅ Secure headers (including CSP for fonts)
 app.use(
@@ -58,6 +55,11 @@ app.use(express.json());
 // ✅ API routes
 app.use('/api/business', businessRoutes);
 app.use('/api/queue', queueRoutes);
+
+// Prevent render from trying to serve unknown static files like fonts
+app.get('*', (req, res) => {
+  res.status(404).json({ message: 'Not found' });
+});
 
 // ✅ Socket.io setup
 const io = socketIO(server, {
