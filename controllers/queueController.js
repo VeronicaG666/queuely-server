@@ -1,5 +1,6 @@
 const pool = require('../db');
 const { Parser } = require('json2csv');
+const { v4: isUUID } = require('uuid');
 
 // ✅ Create Queue
 const createQueue = async (req, res) => {
@@ -26,12 +27,7 @@ const createQueue = async (req, res) => {
 
     res.status(201).json({
       message: '✅ Queue created',
-      queue: {
-        id: result.rows[0].id,
-        title: result.rows[0].title,
-        status: result.rows[0].status,
-        created_at: result.rows[0].created_at,
-      },
+      queue: result.rows[0],
     });
   } catch (err) {
     console.error('❌ createQueue error:', err);
@@ -44,6 +40,8 @@ const joinQueue = async (req, res) => {
   const queue_id = req.params.id;
   const { name, notify_email } = req.body;
 
+  console.log('🛬 joinQueue:', { queue_id, name });
+
   if (!queue_id || !name) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -55,6 +53,7 @@ const joinQueue = async (req, res) => {
     );
 
     if (queue.rows.length === 0) {
+      console.warn('⚠️ Queue not found or inactive:', queue_id);
       return res.status(404).json({ error: 'Queue not found or inactive' });
     }
 
@@ -132,7 +131,7 @@ const getQueueUsers = async (req, res) => {
   }
 };
 
-// ✅ Update User Status in Queue
+// ✅ Update User Status
 const updateQueueUserStatus = async (req, res) => {
   const { queueId, userId } = req.params;
   const { status } = req.body;
@@ -159,7 +158,7 @@ const updateQueueUserStatus = async (req, res) => {
   }
 };
 
-// ✅ Export Queue to CSV
+// ✅ Export CSV
 const exportQueueCSV = async (req, res) => {
   const queue_id = req.params.id;
 
