@@ -21,20 +21,19 @@ const allowedOrigins = [
 
 
 
-// ✅ Secure headers (including CSP for fonts)
 app.use(
-  helmet({
-    contentSecurityPolicy: {
-      useDefaults: true,
-      directives: {
-        "default-src": ["'self'"],
-        "font-src": ["'self'", "data:"],
-        "style-src": ["'self'", "'unsafe-inline'"],
-        "script-src": ["'self'"],
-      },
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "font-src": ["'self'", "data:"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "script-src": ["'self'", "'unsafe-inline'"],
+      "connect-src": ["'self'", "https://queuely.vercel.app", "https://queuely-server.onrender.com", "ws://localhost:5000", "wss://queuely-server.onrender.com"],
     },
   })
 );
+
 
 // ✅ CORS setup
 app.use(cors({
