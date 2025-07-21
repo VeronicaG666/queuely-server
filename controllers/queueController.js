@@ -48,8 +48,8 @@ const joinQueue = async (req, res) => {
 
   try {
     const queue = await pool.query(
-      'SELECT * FROM queues WHERE id = $1 AND status = $2',
-      [queue_id, 'active']
+      'SELECT * FROM queues WHERE id = $1',
+      [queue_id]
     );
 
     if (queue.rows.length === 0) {

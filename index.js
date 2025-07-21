@@ -44,11 +44,7 @@ app.use(
 // ✅ CORS
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, true); // allow all origins
   },
   methods: ['GET', 'POST', 'PATCH'],
   credentials: true,
